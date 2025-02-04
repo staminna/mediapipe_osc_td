@@ -349,15 +349,31 @@ class PoseAndHandProcessor:
             return
             
         try:
-            # Format hand data
-            data = []
+            # Define hand landmark names for better readability
+            landmark_names = [
+                'wrist',
+                'thumb_cmc', 'thumb_mcp', 'thumb_ip', 'thumb_tip',
+                'index_mcp', 'index_pip', 'index_dip', 'index_tip',
+                'middle_mcp', 'middle_pip', 'middle_dip', 'middle_tip',
+                'ring_mcp', 'ring_pip', 'ring_dip', 'ring_tip',
+                'pinky_mcp', 'pinky_pip', 'pinky_dip', 'pinky_tip'
+            ]
+            
+            # Send individual landmarks with descriptive addresses
+            for idx, lm in enumerate(landmarks.landmark):
+                if idx < len(landmark_names):
+                    landmark_name = landmark_names[idx]
+                    address = f"/hand/{handedness.lower()}/{landmark_name}"
+                    data = [lm.x, lm.y, lm.z]
+                    self.osc_client.send_message(address, data)
+            
+            # Also send complete hand data in one message for efficiency
+            full_data = []
             for lm in landmarks.landmark:
-                data.extend([lm.x, lm.y, lm.z])
+                full_data.extend([lm.x, lm.y, lm.z])
+            self.osc_client.send_message(f"/hand/{handedness.lower()}/all", full_data)
             
-            # Send hand data with handedness
-            self.osc_client.send_message(f"/hand/{handedness.lower()}", data)
-            logging.debug(f"Sent {handedness} hand data: {len(data)/3} landmarks")
-            
+            logging.debug(f"Sent {handedness} hand data: {len(landmark_names)} landmarks")
             self.last_send = now
             
         except Exception as e:
