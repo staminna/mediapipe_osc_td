@@ -113,18 +113,23 @@ async def main():
     try:
         if KINECT_AVAILABLE:
             print(f"Starting {DRIVER_NAME} server using Kinect v2...")
-            await websockets.serve(partial(process_frames, use_kinect=True), 
-                                   "localhost", WEBSOCKET_PORT)
+            server = await websockets.serve(partial(process_frames, use_kinect=True),
+                                            "localhost", WEBSOCKET_PORT)
         else:
             raise RuntimeError("Kinect not available")
     except Exception as e:
         print(f"Kinect error: {e}, falling back to webcam")
-        await websockets.serve(partial(process_frames, use_kinect=False), 
-                               "localhost", WEBSOCKET_PORT)
+        server = await websockets.serve(partial(process_frames, use_kinect=False),
+                                        "localhost", WEBSOCKET_PORT)
 
     print(f"WebSocket server running on ws://localhost:{WEBSOCKET_PORT}")
 
+    # Keep the event loop alive forever
+    await asyncio.Future()  # This awaits something that never finishes
+
+
 if __name__ == "__main__":
+
     # Configure for Apple Silicon (M1 Pro and above) performance on macOS
     if platform.system() == "Darwin" and platform.processor() == "arm":
         try:
